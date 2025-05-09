@@ -1,0 +1,422 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rifa Ivelas Aromas - 100 Números</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6d8961',
+                        secondary: '#5d5340',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #6d8961, #5d5340);
+            min-height: 100vh;
+        }
+        
+        .number-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .number-btn:hover:not(.sold) {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .sold {
+            background-color: #5d5340 !important;
+            color: white !important;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        
+        .selected {
+            background-color: #a1b996 !important;
+            border: 2px solid #5d5340;
+        }
+        
+        .modal {
+            backdrop-filter: blur(5px);
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: fall 3s ease-in infinite;
+        }
+        
+        @keyframes fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden p-6">
+        <h1 class="text-3xl font-bold text-center text-primary mb-2">Ivelas Aromas</h1>
+        <h2 class="text-xl text-center text-secondary mb-6">Rifa - 100 Números</h2>
+        
+        <div class="mb-6 bg-green-50 p-4 rounded-lg border border-primary">
+            <h2 class="text-xl font-semibold text-primary mb-2">Instruções:</h2>
+            <p class="text-secondary">1. Clique nos números que deseja comprar (R$12,00 cada)</p>
+            <p class="text-secondary">2. Confira os números selecionados e o valor total</p>
+            <p class="text-secondary">3. Clique em "Finalizar Compra" e preencha seus dados</p>
+        </div>
+        
+        <div class="flex flex-col md:flex-row gap-6">
+            <div class="md:w-3/4">
+                <div class="grid grid-cols-5 sm:grid-cols-10 gap-2 mb-8" id="numbers-container">
+                    <!-- Números serão gerados aqui via JavaScript -->
+                </div>
+                
+                <div class="bg-gray-100 p-4 rounded-lg border border-gray-200">
+                    <h2 class="text-xl font-semibold text-secondary mb-2">Legenda:</h2>
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 bg-primary rounded mr-2"></div>
+                            <span class="text-secondary">Disponível</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 bg-secondary rounded mr-2"></div>
+                            <span class="text-secondary">Vendido</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 bg-[#a1b996] border-2 border-secondary rounded mr-2"></div>
+                            <span class="text-secondary">Selecionado</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="md:w-1/4">
+                <div class="bg-green-50 p-4 rounded-lg border border-primary sticky top-4">
+                    <h2 class="text-xl font-semibold text-primary mb-4">Seu Carrinho</h2>
+                    
+                    <div id="selected-numbers-container" class="mb-4 min-h-[100px]">
+                        <p class="text-gray-500 italic text-center" id="empty-cart-message">Nenhum número selecionado</p>
+                        <div id="selected-numbers-list" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    
+                    <div class="border-t border-gray-300 pt-4 mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold">Quantidade:</span>
+                            <span id="quantity-display">0</span>
+                        </div>
+                        <div class="flex justify-between items-center text-lg font-bold">
+                            <span>Total:</span>
+                            <span id="total-display">R$ 0,00</span>
+                        </div>
+                    </div>
+                    
+                    <button id="checkout-btn" class="w-full bg-primary text-white font-bold py-3 px-4 rounded-md hover:bg-opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Finalizar Compra
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para inserir dados -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center modal z-50">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 relative">
+            <button id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            
+            <h2 class="text-2xl font-bold text-center text-primary mb-4">Finalizar Compra</h2>
+            
+            <div class="mb-4 p-3 bg-green-50 rounded-lg">
+                <h3 class="font-semibold text-secondary mb-2">Números selecionados:</h3>
+                <div id="modal-selected-numbers" class="flex flex-wrap gap-2"></div>
+                <div class="mt-2 font-bold text-right text-primary">
+                    Total: <span id="modal-total-display">R$ 0,00</span>
+                </div>
+            </div>
+            
+            <form id="buyer-form" class="space-y-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-secondary mb-1">Nome Completo</label>
+                    <input type="text" id="name" name="name" required class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-secondary mb-1">Telefone (WhatsApp)</label>
+                    <div class="flex items-center">
+                        <span class="bg-gray-100 px-3 py-2 border border-r-0 border-gray-300 rounded-l-md text-gray-500">+55</span>
+                        <input type="tel" id="phone" name="phone" required class="w-full px-4 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-primary" placeholder="(00) 00000-0000">
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-primary text-white font-bold py-3 px-4 rounded-md hover:bg-opacity-90 transition-all">
+                    Confirmar Compra
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal de confirmação -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center modal z-50">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 text-center">
+            <div class="text-primary mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            
+            <h2 class="text-2xl font-bold text-secondary mb-2">Compra Confirmada!</h2>
+            <p class="text-gray-600 mb-6">Seus números foram reservados com sucesso. Uma mensagem foi enviada para a loja.</p>
+            
+            <button id="close-confirmation" class="bg-primary text-white font-bold py-2 px-6 rounded-md hover:bg-opacity-90 transition-all">
+                Fechar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const numbersContainer = document.getElementById('numbers-container');
+            const modal = document.getElementById('modal');
+            const confirmationModal = document.getElementById('confirmation-modal');
+            const buyerForm = document.getElementById('buyer-form');
+            const closeModalBtn = document.getElementById('close-modal');
+            const closeConfirmationBtn = document.getElementById('close-confirmation');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            const selectedNumbersList = document.getElementById('selected-numbers-list');
+            const emptyCartMessage = document.getElementById('empty-cart-message');
+            const quantityDisplay = document.getElementById('quantity-display');
+            const totalDisplay = document.getElementById('total-display');
+            const modalSelectedNumbers = document.getElementById('modal-selected-numbers');
+            const modalTotalDisplay = document.getElementById('modal-total-display');
+            
+            // Número da loja Ivelas Aromas para enviar mensagem no WhatsApp
+            const STORE_WHATSAPP = "5511963487851"; // Número da loja sem formatação
+            
+            const PRICE_PER_NUMBER = 12.00;
+            let selectedNumbers = [];
+            
+            // Carregar dados salvos do localStorage
+            let soldNumbers = JSON.parse(localStorage.getItem('soldNumbers')) || {};
+            
+            // Gerar 100 números
+            for (let i = 1; i <= 100; i++) {
+                const numberBtn = document.createElement('button');
+                const formattedNumber = i.toString().padStart(2, '0');
+                numberBtn.textContent = formattedNumber;
+                numberBtn.className = `number-btn h-14 rounded-lg font-bold text-lg ${soldNumbers[i] ? 'sold' : 'bg-primary text-white'}`;
+                numberBtn.dataset.number = i;
+                
+                if (!soldNumbers[i]) {
+                    numberBtn.addEventListener('click', function() {
+                        toggleNumberSelection(i, numberBtn);
+                    });
+                } else {
+                    numberBtn.title = `Vendido para: ${soldNumbers[i].name}`;
+                }
+                
+                numbersContainer.appendChild(numberBtn);
+            }
+            
+            function toggleNumberSelection(number, button) {
+                const index = selectedNumbers.indexOf(number);
+                
+                if (index === -1) {
+                    // Adicionar à seleção
+                    selectedNumbers.push(number);
+                    button.classList.add('selected');
+                } else {
+                    // Remover da seleção
+                    selectedNumbers.splice(index, 1);
+                    button.classList.remove('selected');
+                }
+                
+                updateCart();
+            }
+            
+            function updateCart() {
+                // Ordenar números selecionados
+                selectedNumbers.sort((a, b) => a - b);
+                
+                // Atualizar lista de números selecionados
+                selectedNumbersList.innerHTML = '';
+                modalSelectedNumbers.innerHTML = '';
+                
+                if (selectedNumbers.length === 0) {
+                    emptyCartMessage.classList.remove('hidden');
+                    checkoutBtn.disabled = true;
+                } else {
+                    emptyCartMessage.classList.add('hidden');
+                    checkoutBtn.disabled = false;
+                    
+                    selectedNumbers.forEach(number => {
+                        // Para o carrinho lateral
+                        const chip = document.createElement('div');
+                        chip.className = 'bg-primary text-white px-3 py-1 rounded-full text-sm font-semibold';
+                        chip.textContent = number.toString().padStart(2, '0');
+                        selectedNumbersList.appendChild(chip);
+                        
+                        // Para o modal
+                        const modalChip = chip.cloneNode(true);
+                        modalSelectedNumbers.appendChild(modalChip);
+                    });
+                }
+                
+                // Atualizar quantidade e total
+                const quantity = selectedNumbers.length;
+                const total = quantity * PRICE_PER_NUMBER;
+                
+                quantityDisplay.textContent = quantity;
+                totalDisplay.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+                modalTotalDisplay.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            }
+            
+            checkoutBtn.addEventListener('click', function() {
+                if (selectedNumbers.length > 0) {
+                    openModal();
+                }
+            });
+            
+            function openModal() {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.getElementById('name').focus();
+            }
+            
+            closeModalBtn.addEventListener('click', function() {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                buyerForm.reset();
+            });
+            
+            closeConfirmationBtn.addEventListener('click', function() {
+                confirmationModal.classList.add('hidden');
+                confirmationModal.classList.remove('flex');
+                // Recarregar a página para atualizar tudo
+                window.location.reload();
+            });
+            
+            buyerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('name').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                
+                if (!name || !phone) {
+                    alert('Por favor, preencha todos os campos.');
+                    return;
+                }
+                
+                // Salvar dados para cada número selecionado
+                selectedNumbers.forEach(number => {
+                    soldNumbers[number] = {
+                        name: name,
+                        phone: phone,
+                        date: new Date().toISOString()
+                    };
+                    
+                    // Atualizar visual do botão
+                    const numberBtn = document.querySelector(`.number-btn[data-number="${number}"]`);
+                    numberBtn.classList.add('sold');
+                    numberBtn.classList.remove('bg-primary', 'selected');
+                    numberBtn.title = `Vendido para: ${name}`;
+                    
+                    // Remover o evento de clique
+                    numberBtn.replaceWith(numberBtn.cloneNode(true));
+                });
+                
+                localStorage.setItem('soldNumbers', JSON.stringify(soldNumbers));
+                
+                // Fechar modal de dados
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                buyerForm.reset();
+                
+                // Mostrar modal de confirmação
+                confirmationModal.classList.remove('hidden');
+                confirmationModal.classList.add('flex');
+                
+                // Criar confetes para celebração
+                createConfetti();
+                
+                // Preparar mensagem para WhatsApp
+                const numbersText = selectedNumbers.map(n => n.toString().padStart(2, '0')).join(', ');
+                const total = (selectedNumbers.length * PRICE_PER_NUMBER).toFixed(2).replace('.', ',');
+                const formattedPhone = phone.replace(/\D/g, '');
+                
+                const message = encodeURIComponent(
+                    `*NOVA COMPRA DE RIFA - IVELAS AROMAS*\n\n` +
+                    `*Cliente:* ${name}\n` +
+                    `*Telefone:* +55 ${formattedPhone}\n\n` +
+                    `*Números:* ${numbersText}\n` +
+                    `*Quantidade:* ${selectedNumbers.length}\n` +
+                    `*Total:* R$ ${total}`
+                );
+                
+                // Abrir WhatsApp em nova aba para enviar mensagem para a loja
+                setTimeout(() => {
+                    window.open(`https://wa.me/${STORE_WHATSAPP}?text=${message}`, '_blank');
+                }, 1000);
+                
+                // Limpar seleção
+                selectedNumbers = [];
+                updateCart();
+            });
+            
+            function createConfetti() {
+                const colors = ['#6d8961', '#5d5340', '#8ca47f', '#7a6e59', '#a1b996', '#8e8270'];
+                
+                for (let i = 0; i < 50; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = `${Math.random() * 100}%`;
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                    document.body.appendChild(confetti);
+                    
+                    // Remover confete após a animação
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 5000);
+                }
+            }
+            
+            // Formatar número de telefone
+            const phoneInput = document.getElementById('phone');
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                
+                if (value.length > 2 && value.length <= 6) {
+                    value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+                } else if (value.length > 6) {
+                    value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+                }
+                
+                e.target.value = value;
+            });
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93cd74255067f1e7',t:'MTc0Njc1NDQ1OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
